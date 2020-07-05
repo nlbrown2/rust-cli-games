@@ -1,4 +1,6 @@
 pub use crate::error::OthelloError;
+pub use crate::othello::OthelloGame;
+pub use crate::player::HumanPlayer;
 
 pub trait Game {
     /*
@@ -26,6 +28,6 @@ pub struct Pos {
     x: usize,
     y: usize,
 }
-pub mod othello;
 pub mod player;
 pub mod error;
+pub mod othello;
