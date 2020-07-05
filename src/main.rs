@@ -1,4 +1,4 @@
-use rust_othello::othello::othello::OthelloGame;
+use rust_othello::othello::OthelloGame;
 use rust_othello::player::player;
 use rust_othello::{Game, OthelloError, Player};
 

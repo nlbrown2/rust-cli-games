@@ -1,16 +1,16 @@
-/*
- * Things to define:
- *  - Traits:
- *      * Game (public)
- *      * Player (public)
- *      * GameBoard (private)
- */
 pub use crate::error::OthelloError;
 
 pub trait Game {
+    /*
+     * Create & initalize a game with players
+     */
     fn new(players: Vec<Box<dyn Player>>) -> Result<Self, OthelloError>
     where
         Self: Sized;
+
+    /*
+     * Blocks until the game is done
+     */
     fn run(&mut self) -> Result<(), OthelloError>;
 }
 
