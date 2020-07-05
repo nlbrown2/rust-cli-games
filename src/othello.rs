@@ -1,5 +1,6 @@
 use crate::{Game, OthelloError, Player, Pos};
 use std::fmt;
+use std::collections::VecDeque;
 
 #[derive(Debug)]
 pub struct OthelloGame {
@@ -21,16 +22,19 @@ pub struct GameBoard {
 }
 
 impl Game for OthelloGame {
-    fn new(mut players: Vec<Box<dyn Player>>) -> Result<OthelloGame, OthelloError> {
-        if players.len() != 2 {
-            return Err(OthelloError::InvalidArgs);
+    fn new(mut players: VecDeque<Box<dyn Player>>) -> Result<OthelloGame, OthelloError> {
+        let player1 = players.pop_front().ok_or(OthelloError::InvalidArgs)?;
+        let player2 = players.pop_front().ok_or(OthelloError::InvalidArgs)?;
+        if !players.is_empty() {
+            Err(OthelloError::InvalidArgs)
+        } else {
+            Ok(OthelloGame {
+                player1: player1,
+                player2: player2,
+                player1_turn: true,
+                board: GameBoard::new(),
+            })
         }
-        Ok(OthelloGame {
-            player1: players.remove(0),
-            player2: players.remove(0),
-            player1_turn: true,
-            board: GameBoard::new(),
-        })
     }
     fn run(&mut self) -> Result<(), OthelloError> {
         let mut moved = true;

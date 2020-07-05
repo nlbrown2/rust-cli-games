@@ -1,12 +1,13 @@
 pub use crate::error::OthelloError;
 pub use crate::othello::OthelloGame;
 pub use crate::player::HumanPlayer;
+use std::collections::VecDeque;
 
 pub trait Game {
     /*
      * Create & initalize a game with players
      */
-    fn new(players: Vec<Box<dyn Player>>) -> Result<Self, OthelloError>
+    fn new(players: VecDeque<Box<dyn Player>>) -> Result<Self, OthelloError>
     where
         Self: Sized;
 
