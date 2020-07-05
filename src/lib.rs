@@ -21,8 +21,21 @@ pub trait Player: std::fmt::Debug {
     fn new() -> Self
     where
         Self: Sized + std::fmt::Debug;
-    fn get_move(&self) -> Result<Pos, OthelloError>;
+    fn get_move(&self) -> Result<UserInput, OthelloError>;
 }
+
+#[derive(Debug)]
+pub enum UserInput {
+    Position(Pos),
+    Quit,
+}
+
+impl From<Pos> for UserInput {
+    fn from(pos: Pos) -> UserInput {
+        UserInput::Position(pos)
+    }
+}
+
 
 #[derive(Debug)]
 pub struct Pos {

@@ -1,4 +1,4 @@
-use crate::{Game, OthelloError, Player, Pos};
+use crate::{Game, OthelloError, Player, Pos, UserInput};
 use std::fmt;
 use std::collections::VecDeque;
 
@@ -37,25 +37,59 @@ impl Game for OthelloGame {
         }
     }
     fn run(&mut self) -> Result<(), OthelloError> {
-        let mut moved = true;
-        while moved {
+        loop {
             println!("The game looks like: {}", &self);
             println!("Please type where you want to move in X, Y format");
-            moved = false;
-            if self.board.player1_can_move() {
-                let pos = self.player1.get_move()?;
-                self.board.move_player1(&pos)?;
-                moved = true;
-            }
+            let moved = self.move_next_player()?;
             println!("The game looks like: {}", &self);
             println!("Please type where you want to move in X, Y format");
-            if self.board.player2_can_move() {
-                let pos = self.player2.get_move()?;
-                self.board.move_player2(&pos)?;
-                moved = true;
+            let moved = self.move_next_player()? || moved;
+            if !moved {
+                break;
             }
         }
         Ok(())
+    }
+}
+
+impl OthelloGame {
+    fn move_next_player(&mut self) -> Result<bool, OthelloError> {
+        // First, determine if we can move:
+        if self.player1_turn && !self.board.player1_can_move() {
+            return Ok(false);
+        } else if !self.player1_turn && !self.board.player2_can_move() {
+            return Ok(false);
+        }
+
+        // get the player's move
+        let player = if self.player1_turn {
+            &self.player1
+        } else {
+            &self.player2
+        };
+        let input = player.get_move()?;
+
+        //see if they put in a desire to end the game or not
+        let mut moved = false;
+        match input {
+            UserInput::Position(p) => {
+                // they entered a desired position to move to
+                if self.player1_turn {
+                    self.board.move_player1(&p)?;
+                } else {
+                    self.board.move_player2(&p)?;
+                }
+                moved = true;
+            },
+            UserInput::Quit => {
+                println!("Quitting detected!");
+                //TODO: actually end the game...Probably replace the "Bool" with an enum, or add a "Quitting" state to the errors (even though it isn't really an error....)
+            }
+        }
+
+        //flip whose turn it is
+        self.player1_turn = !self.player1_turn;
+        Ok(moved)
     }
 }
 
