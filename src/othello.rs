@@ -16,9 +16,10 @@ impl fmt::Display for OthelloGame {
     }
 }
 
+const BOARD_WIDTH: usize = 8;
 #[derive(Debug)]
 pub struct GameBoard {
-    board: Vec<Vec<char>>,
+    board: [[char; BOARD_WIDTH]; BOARD_WIDTH],
 }
 
 impl Game for OthelloGame {
@@ -95,29 +96,28 @@ impl OthelloGame {
 
 impl fmt::Display for GameBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        writeln!(f)?;
+        writeln!(f)?; // get onto our own line, screw anyone who tries telling us differently!
         for val in 1..=8 {
-            write!(f, "{0: >4}", val)?;
+            write!(f, "{0: >4}", val)?; // write the column numbers, 4 spaces per column
         }
-        write!(f, "\n{}\n", format!("  {0:—^32}", "—"))?;
+        write!(f, "\n{}\n", format!("  {0:—^32}", "—"))?; // write 32 '—' characters. 32 = 8 (width in columns) * 4 (width of column)
         for (idx, row) in self.board.iter().enumerate() {
-            write!(f, "{}", format!("{0: <1} |", idx + 1))?;
+            write!(f, "{}", format!("{0: <1} |", idx + 1))?; // write the 1 digit row number, then a | symbol
             for c in row {
-                write!(f, "{0: ^3}|", c)?
+                write!(f, "{0: ^3}|", c)? // write each character, then a pipe symbol. Using 3 spaces ensures the cell's value is centered
             }
-            write!(f, "\n{}\n", format!("  {0:—^32}", "—"))?;
+            write!(f, "\n{}\n", format!("  {0:—^32}", "—"))?; // write another 32 dashes
         }
         Ok(())
     }
 }
 
-const BOARD_WIDTH: usize = 8;
 const P1_TOKEN: char = '*';
 const P2_TOKEN: char = 'O';
+const EMPTY_TOKEN: char = ' ';
 impl GameBoard {
     fn new() -> GameBoard {
-        let board = vec![vec![' '; BOARD_WIDTH]; BOARD_WIDTH];
-        return GameBoard { board };
+        return GameBoard {board: [[EMPTY_TOKEN; BOARD_WIDTH]; BOARD_WIDTH]};
     }
     fn move_player1(&mut self, pos: &Pos) -> Result<(), OthelloError> {
         self.make_move(&pos, P1_TOKEN)
@@ -132,13 +132,18 @@ impl GameBoard {
         self.can_move(P2_TOKEN)
     }
     fn can_move(&self, _token: char) -> bool {
-        true
+        true //TODO: check if a given token can be placed anywhere
     }
     fn make_move(&mut self, pos: &Pos, token: char) -> Result<(), OthelloError> {
         if pos.x > BOARD_WIDTH || pos.y > BOARD_WIDTH || pos.x == 0 || pos.y == 0 {
             return Err(OthelloError::IllegalMove);
         }
-        self.board[pos.x - 1][pos.y - 1] = token;
-        Ok(())
+        let pos = Pos {x : pos.x -1, y: pos.y - 1}; // shift indicies from human-like 1 indexing to computer-like 0 indexing
+        if self.board[pos.x][pos.y] != EMPTY_TOKEN { // don't allow players to occupy a taken spot!
+            Err(OthelloError::IllegalMove)
+        } else {
+            self.board[pos.x][pos.y] = token;
+            Ok(())
+        }
     }
 }
