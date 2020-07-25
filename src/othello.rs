@@ -172,5 +172,19 @@ impl GameBoard {
             self.board[pos.x][pos.y] = token;
             Ok(())
         }
+        // TODO: flip opponents token
+        // find which directions have my token along them
+        // flip all tokens on the way back
+        //  - can either remember them or can just iterate forwards then backwards (probs this one)
+        // Have a generic function that generates the next row & column given the current row &
+        // column. Can do so by pasing in dX & dY. While the next generated row & col is still valid,
+        // see if it is the type of token we are looking for, if so, then flip all of the indicies
+        // between that and the start (by intervting dx & dy) & return the number of tokens you
+        // flipped. That will inform the caller how to update the score.
+        // for dx = -1 to 1
+        //    for dy = -1 to 1
+        //       skip 0, 0
+        //       etc.
+        // TODO: Track score
     }
 }
