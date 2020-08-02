@@ -17,6 +17,7 @@ impl Player for HumanPlayer {
         let mut iter = input.split(",");
         let x = iter.next().ok_or(OthelloError::InvalidArgs)?.trim();
         if x == "q" || x == "quit" {
+            // TODO: normalize input so things like Quit or Q also work
             return Ok(UserInput::Quit);
         }
         let x = x.parse::<usize>()?;

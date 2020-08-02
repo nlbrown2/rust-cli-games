@@ -1,6 +1,6 @@
 use crate::{Game, OthelloError, Player, Pos, UserInput};
-use std::fmt;
 use std::collections::VecDeque;
+use std::fmt;
 
 #[derive(Debug)]
 pub struct OthelloGame {
@@ -22,6 +22,13 @@ pub struct GameBoard {
     board: [[char; BOARD_WIDTH]; BOARD_WIDTH],
 }
 
+#[derive(Debug, PartialEq)]
+enum Move {
+    Moved,
+    Quitting,
+    NoMoveOption,
+}
+
 impl Game for OthelloGame {
     fn new(mut players: VecDeque<Box<dyn Player>>) -> Result<OthelloGame, OthelloError> {
         let player1 = players.pop_front().ok_or(OthelloError::InvalidArgs)?;
@@ -30,8 +37,8 @@ impl Game for OthelloGame {
             Err(OthelloError::InvalidArgs)
         } else {
             Ok(OthelloGame {
-                player1: player1,
-                player2: player2,
+                player1,
+                player2,
                 player1_turn: true,
                 board: GameBoard::new(),
             })
@@ -39,12 +46,18 @@ impl Game for OthelloGame {
     }
     fn run(&mut self) -> Result<(), OthelloError> {
         loop {
+            let moved_enum = self.move_next_player()?;
+            if let Move::Quitting = moved_enum {
+                break;
+            }
+            let moved = moved_enum == Move::Moved;
             println!("The game looks like: {}", &self);
-            println!("Please type where you want to move in X, Y format");
-            let moved = self.move_next_player()?;
-            println!("The game looks like: {}", &self);
-            println!("Please type where you want to move in X, Y format");
-            let moved = self.move_next_player()? || moved;
+            println!("Please type where you want to move in X, Y format, or type \"quit\" to quit the game"); // TODO: Better code re-use. Probably fold into "move_next_player"
+            let moved_enum = self.move_next_player()?;
+            if let Move::Quitting = moved_enum {
+                break;
+            }
+            let moved = moved_enum == Move::Moved || moved;
             if !moved {
                 break;
             }
@@ -54,12 +67,12 @@ impl Game for OthelloGame {
 }
 
 impl OthelloGame {
-    fn move_next_player(&mut self) -> Result<bool, OthelloError> {
+    fn move_next_player(&mut self) -> Result<Move, OthelloError> {
         // First, determine if we can move:
         if self.player1_turn && !self.board.player1_can_move() {
-            return Ok(false);
+            return Ok(Move::NoMoveOption);
         } else if !self.player1_turn && !self.board.player2_can_move() {
-            return Ok(false);
+            return Ok(Move::NoMoveOption);
         }
 
         // get the player's move
@@ -68,10 +81,13 @@ impl OthelloGame {
         } else {
             &self.player2
         };
+        println!("The game looks like: {}", &self);
+        println!(
+            "Please type where you want to move in X, Y format, or type \"quit\" to quit the game"
+        );
         let input = player.get_move()?;
 
         //see if they put in a desire to end the game or not
-        let mut moved = false;
         match input {
             UserInput::Position(p) => {
                 // they entered a desired position to move to
@@ -80,17 +96,17 @@ impl OthelloGame {
                 } else {
                     self.board.move_player2(&p)?;
                 }
-                moved = true;
-            },
+            }
+            // They typed quit
             UserInput::Quit => {
                 println!("Quitting detected!");
-                //TODO: actually end the game...Probably replace the "Bool" with an enum, or add a "Quitting" state to the errors (even though it isn't really an error....)
+                return Ok(Move::Quitting);
             }
         }
 
         //flip whose turn it is
         self.player1_turn = !self.player1_turn;
-        Ok(moved)
+        Ok(Move::Moved)
     }
 }
 
@@ -117,7 +133,14 @@ const P2_TOKEN: char = 'O';
 const EMPTY_TOKEN: char = ' ';
 impl GameBoard {
     fn new() -> GameBoard {
-        return GameBoard {board: [[EMPTY_TOKEN; BOARD_WIDTH]; BOARD_WIDTH]};
+        let mut empty = GameBoard {
+            board: [[EMPTY_TOKEN; BOARD_WIDTH]; BOARD_WIDTH],
+        };
+        empty.board[BOARD_WIDTH / 2][BOARD_WIDTH / 2] = P1_TOKEN;
+        empty.board[BOARD_WIDTH / 2][BOARD_WIDTH / 2 - 1] = P2_TOKEN;
+        empty.board[BOARD_WIDTH / 2 - 1][BOARD_WIDTH / 2] = P2_TOKEN;
+        empty.board[BOARD_WIDTH / 2 - 1][BOARD_WIDTH / 2 - 1] = P1_TOKEN;
+        empty
     }
     fn move_player1(&mut self, pos: &Pos) -> Result<(), OthelloError> {
         self.make_move(&pos, P1_TOKEN)
@@ -138,8 +161,12 @@ impl GameBoard {
         if pos.x > BOARD_WIDTH || pos.y > BOARD_WIDTH || pos.x == 0 || pos.y == 0 {
             return Err(OthelloError::IllegalMove);
         }
-        let pos = Pos {x : pos.x -1, y: pos.y - 1}; // shift indicies from human-like 1 indexing to computer-like 0 indexing
-        if self.board[pos.x][pos.y] != EMPTY_TOKEN { // don't allow players to occupy a taken spot!
+        let pos = Pos {
+            x: pos.x - 1,
+            y: pos.y - 1,
+        }; // shift indicies from human-like 1 indexing to computer-like 0 indexing
+        if self.board[pos.x][pos.y] != EMPTY_TOKEN {
+            // don't allow players to occupy a taken spot!
             Err(OthelloError::IllegalMove)
         } else {
             self.board[pos.x][pos.y] = token;
@@ -153,6 +180,20 @@ impl GameBoard {
             }
             Ok(())
         }
+        // TODO: flip opponents token
+        // find which directions have my token along them
+        // flip all tokens on the way back
+        //  - can either remember them or can just iterate forwards then backwards (probs this one)
+        // Have a generic function that generates the next row & column given the current row &
+        // column. Can do so by pasing in dX & dY. While the next generated row & col is still valid,
+        // see if it is the type of token we are looking for, if so, then flip all of the indicies
+        // between that and the start (by intervting dx & dy) & return the number of tokens you
+        // flipped. That will inform the caller how to update the score.
+        // for dx = -1 to 1
+        //    for dy = -1 to 1
+        //       skip 0, 0
+        //       etc.
+        // TODO: Track score
     }
     fn flip_files(&mut self, startPos: &Pos, dx: i32, dy: i32, token: char) {
         let multiplier: i32 = 1;
