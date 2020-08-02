@@ -143,7 +143,39 @@ impl GameBoard {
             Err(OthelloError::IllegalMove)
         } else {
             self.board[pos.x][pos.y] = token;
+            for dx in -1..=1 {
+                for dy in -1..=1 {
+                    if dx == 0 && dy == 0 {
+                        continue;
+                    }
+                    println!("looking with {0} and {1}", dx, dy);
+                }
+            }
             Ok(())
         }
+    }
+    fn flip_files(&mut self, startPos: &Pos, dx: i32, dy: i32, token: char) {
+        let multiplier: i32 = 1;
+        let mut end_range: Pos = Pos {
+            x: startPos.x + dx,
+            y: startPos.y + dy,
+        };
+        while self.board[end_range.x][end_range.y] == token {
+            multiplier += 1;
+            let new_x = end_range.x + dx as usize;
+            let new_y = end_range.y + dy as usize;
+            if new_x > BOARD_WIDTH || new_x <= 0 {
+                return;
+            }
+            if new_y > BOARD_WIDTH || new_y <= 0 {
+                return;
+            }
+            end_range.x = new_x;
+            end_range.y = new_y;
+        }
+        if multiplier == 1 {
+            return; // TODO: return num tiles flipped?
+        }
+
     }
 }

@@ -42,6 +42,11 @@ pub struct Pos {
     x: usize,
     y: usize,
 }
+impl Pos {
+    fn new(i32 x, i32 y) -> Self {
+        //TODO: bounds check (have to move into othello.rs or something idk
+    }
+}
 pub mod player;
 pub mod error;
 pub mod othello;
