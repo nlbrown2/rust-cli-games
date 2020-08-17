@@ -15,14 +15,14 @@ impl Player for HumanPlayer {
         let mut input = String::new();
         io::stdin().read_line(&mut input)?;
         let mut iter = input.split(",");
-        let x = iter.next().ok_or(OthelloError::InvalidArgs)?.trim();
-        if x == "q" || x == "quit" {
+        let row = iter.next().ok_or(OthelloError::InvalidArgs)?.trim();
+        if row == "q" || row == "quit" {
             // TODO: normalize input so things like Quit or Q also work
             return Ok(UserInput::Quit);
         }
-        let x = x.parse::<usize>()?;
-        let y = iter.next().ok_or(OthelloError::InvalidArgs)?.trim();
-        let y = y.parse::<usize>()?;
-        return Ok(UserInput::Position(Pos { x, y }));
+        let row = row.parse::<i32>()?;
+        let col = iter.next().ok_or(OthelloError::InvalidArgs)?.trim();
+        let col = col.parse::<i32>()?;
+        return Ok(UserInput::Position(Pos::new(row, col)?));
     }
 }

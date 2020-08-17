@@ -1,7 +1,9 @@
+use crate::board::BOARD_WIDTH;
 pub use crate::error::OthelloError;
 pub use crate::othello::OthelloGame;
 pub use crate::player::HumanPlayer;
 use std::collections::VecDeque;
+use std::convert::TryInto;
 
 pub trait Game {
     /*
@@ -36,17 +38,35 @@ impl From<Pos> for UserInput {
     }
 }
 
-
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Pos {
-    x: usize,
-    y: usize,
+    row: usize,
+    col: usize,
 }
 impl Pos {
-    fn new(i32 x, i32 y) -> Self {
-        //TODO: bounds check (have to move into othello.rs or something idk
+    pub fn new(row: i32, col: i32) -> Result<Self, OthelloError> {
+        let (row, col) = Pos::cast(row, col)?;
+        Ok(Pos { row, col })
+    }
+    pub fn shift(&mut self, dr: i32, dc: i32) -> Result<(), OthelloError> {
+        // self.{row, col} should never overflow as it is limited by BOARD_WIDTH
+        let row = self.row as i32 + dr;
+        let col = self.col as i32 + dc;
+        let (row, col) = Pos::cast(row, col)?;
+        self.row = row;
+        self.col = col;
+        Ok(())
+    }
+    fn cast(row: i32, col: i32) -> Result<(usize, usize), OthelloError> {
+        let row: usize = row.try_into().map_err(|_| OthelloError::IllegalMove)?;
+        let col: usize = col.try_into().map_err(|_| OthelloError::IllegalMove)?;
+        if row >= BOARD_WIDTH || col >= BOARD_WIDTH {
+            return Err(OthelloError::IllegalMove);
+        }
+        Ok((row, col))
     }
 }
-pub mod player;
+pub mod board;
 pub mod error;
 pub mod othello;
+pub mod player;
