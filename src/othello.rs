@@ -1,4 +1,4 @@
-use crate::{board::GameBoard, Game, OthelloError, Player, Pos, UserInput};
+use crate::{board::GameBoard, Game, OthelloError, Player, UserInput};
 use std::collections::VecDeque;
 use std::fmt;
 
@@ -69,16 +69,32 @@ impl OthelloGame {
             return Ok(Move::NoMoveOption);
         }
 
+        println!("The game looks like: {}", &self);
+        loop {
+            let result = self.attempt_make_move();
+            match result {
+                Err(OthelloError::IllegalMove) | Err(OthelloError::ParseError(_)) => {
+                    println!("{:}", result.err().unwrap());
+                    continue;
+                }
+                Err(err) => return Err(err), // other error, so propogate it
+                Ok(Move::Quitting) => return Ok(Move::Quitting), // Propogate quitting
+                Ok(_) => break,              // no errors, so continue onwards
+            }
+        }
+
+        //flip whose turn it is
+        self.player1_turn = !self.player1_turn;
+        Ok(Move::Moved)
+    }
+    fn attempt_make_move(&mut self) -> Result<Move, OthelloError> {
         // get the player's move
         let player = if self.player1_turn {
             &self.player1
         } else {
             &self.player2
         };
-        println!("The game looks like: {}", &self);
-        println!(
-            "Please type where you want to move in row, column format, or type \"quit\" to quit the game"
-        );
+        println!("Please type where you want to move in row, column format, or type \"quit\" to quit the game");
         let input = player.get_move()?;
 
         //see if they put in a desire to end the game or not
@@ -89,7 +105,8 @@ impl OthelloGame {
                     self.board.move_player1(&p)?;
                 } else {
                     self.board.move_player2(&p)?;
-                }
+                };
+                Ok(Move::Moved)
             }
             // They typed quit
             UserInput::Quit => {
@@ -97,9 +114,5 @@ impl OthelloGame {
                 return Ok(Move::Quitting);
             }
         }
-
-        //flip whose turn it is
-        self.player1_turn = !self.player1_turn;
-        Ok(Move::Moved)
     }
 }
