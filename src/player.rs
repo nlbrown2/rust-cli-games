@@ -21,8 +21,11 @@ impl Player for HumanPlayer {
             return Ok(UserInput::Quit);
         }
         let row = row.parse::<i32>()?;
+        let row = row - 1;
         let col = iter.next().ok_or(OthelloError::InvalidArgs)?.trim();
         let col = col.parse::<i32>()?;
-        return Ok(UserInput::Position(Pos::new(row, col)?));
+        let col = col - 1;
+        let pos = Pos::new(row, col)?;
+        return Ok(UserInput::Position(pos));
     }
 }

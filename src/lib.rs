@@ -38,7 +38,7 @@ impl From<Pos> for UserInput {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct Pos {
     row: usize,
     col: usize,

@@ -61,12 +61,6 @@ impl GameBoard {
                             .determine_end_of_run(&Pos { row, col }, dr, dc, token)
                             .is_some()
                         {
-                            println!(
-                                "Can go to: {:?} with dr={:}, dc={:}",
-                                Pos { row, col },
-                                dr,
-                                dc
-                            );
                             return true;
                         }
                     }
@@ -76,26 +70,26 @@ impl GameBoard {
         false
     }
     fn make_move(&mut self, pos: &Pos, token: char) -> Result<(), OthelloError> {
-        if pos.row > BOARD_WIDTH || pos.col > BOARD_WIDTH || pos.row == 0 || pos.col == 0 {
-            return Err(OthelloError::IllegalMove);
-        }
-        let pos = Pos {
-            row: pos.row - 1,
-            col: pos.col - 1,
-        }; // shift indicies from human-like 1 indexing to computer-like 0 indexing
         if self.board[pos.row][pos.col] != EMPTY_TOKEN {
             // don't allow players to occupy a taken spot!
             Err(OthelloError::IllegalMove)
         } else {
             self.board[pos.row][pos.col] = token;
+            let mut flipped_any = false;
             for dr in -1..=1 {
                 for dc in -1..=1 {
                     if dr == 0 && dc == 0 {
                         continue;
                     }
+                    if self.flip_files(&pos, dr, dc, token).is_ok() {
+                        flipped_any = true;
+                    }
                 }
             }
-            Ok(())
+            match flipped_any {
+                true => Ok(()),
+                false => Err(OthelloError::IllegalMove),
+            }
         }
         // TODO: flip opponents token
         // find which directions have my token along them
@@ -123,8 +117,16 @@ impl GameBoard {
         dc: i32,
         token: char,
     ) -> Result<usize, OthelloError> {
-        let end_pos = self.determine_end_of_run(start_pos, dr, dc, token);
-        end_pos.map(|_| 5).ok_or(OthelloError::IllegalMove)
+        let mut end_pos = self
+            .determine_end_of_run(start_pos, dr, dc, token)
+            .ok_or(OthelloError::IllegalMove)?;
+        let mut num_flipped = 0;
+        while end_pos != *start_pos {
+            end_pos.shift(-dr, -dc).unwrap();
+            self.board[end_pos.row][end_pos.col] = token;
+            num_flipped += 1;
+        }
+        Ok(num_flipped)
     }
 
     /**
