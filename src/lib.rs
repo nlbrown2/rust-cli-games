@@ -70,3 +70,4 @@ pub mod board;
 pub mod error;
 pub mod othello;
 pub mod player;
+pub mod rpc;
