@@ -10,6 +10,7 @@ pub enum OthelloError {
     IllegalMove,
     IOError(io::Error),
     ParseError(num::ParseIntError),
+    RemoteError(String),
 }
 
 impl From<io::Error> for OthelloError {
@@ -43,6 +44,7 @@ impl fmt::Display for OthelloError {
             OthelloError::IllegalMove => write!(f, "You can't move there!"),
             OthelloError::IOError(err) => write!(f, "{}", err),
             OthelloError::ParseError(err) => write!(f, "{}", err),
+            OthelloError::RemoteError(s) => write!(f, "Remote Err: {}", s),
         }
     }
 }

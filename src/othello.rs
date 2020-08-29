@@ -45,8 +45,6 @@ impl Game for OthelloGame {
                 break;
             }
             let moved = moved_enum == Move::Moved;
-            println!("The game looks like: {}", &self);
-            println!("Please type where you want to move in X, Y format, or type \"quit\" to quit the game"); // TODO: Better code re-use. Probably fold into "move_next_player"
             let moved_enum = self.move_next_player()?;
             if let Move::Quitting = moved_enum {
                 break;
@@ -69,7 +67,6 @@ impl OthelloGame {
             return Ok(Move::NoMoveOption);
         }
 
-        println!("The game looks like: {}", &self);
         loop {
             let result = self.attempt_make_move();
             match result {
@@ -95,7 +92,7 @@ impl OthelloGame {
             &self.player2
         };
         println!("Please type where you want to move in row, column format, or type \"quit\" to quit the game");
-        let input = player.get_move()?;
+        let input = player.get_move(&self.board)?;
 
         //see if they put in a desire to end the game or not
         match input {

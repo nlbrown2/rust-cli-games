@@ -2,6 +2,10 @@ use crate::board::BOARD_WIDTH;
 pub use crate::error::OthelloError;
 pub use crate::othello::OthelloGame;
 pub use crate::player::HumanPlayer;
+pub use crate::player::RemotePlayerClient;
+pub use crate::client::Client;
+pub use crate::server::Server;
+use crate::board::GameBoard;
 use std::collections::VecDeque;
 use std::convert::TryInto;
 
@@ -23,7 +27,7 @@ pub trait Player: std::fmt::Debug {
     fn new() -> Self
     where
         Self: Sized + std::fmt::Debug;
-    fn get_move(&self) -> Result<UserInput, OthelloError>;
+    fn get_move(&self, board: &GameBoard) -> Result<UserInput, OthelloError>;
 }
 
 #[derive(Debug)]
@@ -71,3 +75,5 @@ pub mod error;
 pub mod othello;
 pub mod player;
 pub mod rpc;
+pub mod server;
+pub mod client;

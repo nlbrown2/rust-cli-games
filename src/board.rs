@@ -1,10 +1,12 @@
 use crate::{OthelloError, Pos};
+use crate::rpc::{Serialize, Deserialize, RpcError};
 use std::fmt;
 pub const BOARD_WIDTH: usize = 8;
 #[derive(Debug)]
 pub struct GameBoard {
     board: [[char; BOARD_WIDTH]; BOARD_WIDTH],
 }
+
 impl fmt::Display for GameBoard {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
         writeln!(f)?; // get onto our own line, screw anyone who tries telling us differently!
@@ -74,6 +76,7 @@ impl GameBoard {
             // don't allow players to occupy a taken spot!
             Err(OthelloError::IllegalMove)
         } else {
+            let old_token = self.board[pos.row][pos.col];
             self.board[pos.row][pos.col] = token;
             let mut flipped_any = false;
             for dr in -1..=1 {
@@ -88,22 +91,12 @@ impl GameBoard {
             }
             match flipped_any {
                 true => Ok(()),
-                false => Err(OthelloError::IllegalMove),
+                false =>  {
+                    self.board[pos.row][pos.col] = old_token;
+                    Err(OthelloError::IllegalMove)
+                },
             }
         }
-        // TODO: flip opponents token
-        // find which directions have my token along them
-        // flip all tokens on the way back
-        //  - can either remember them or can just iterate forwards then backwards (probs this one)
-        // Have a generic function that generates the next row & column given the current row &
-        // column. Can do so by pasing in dX & dY. While the next generated row & col is still valid,
-        // see if it is the type of token we are looking for, if so, then flip all of the indicies
-        // between that and the start (by intervting dx & dy) & return the number of tokens you
-        // flipped. That will inform the caller how to update the score.
-        // for dx = -1 to 1
-        //    for dy = -1 to 1
-        //       skip 0, 0
-        //       etc.
         // TODO: Track score
     }
     /**
@@ -150,5 +143,46 @@ impl GameBoard {
             return None;
         }
         Some(end_range)
+    }
+}
+
+impl Serialize for GameBoard {
+    fn serialize(&self) -> Result<Vec<u8>, RpcError> {
+        Ok(self.board.iter()
+            .flatten()
+            .map(|&c| if c == P1_TOKEN {
+                1
+            } else if c == P2_TOKEN {
+                2
+            } else {
+                0
+            })
+        .collect())
+    }
+
+}
+
+impl Deserialize for GameBoard {
+    fn deserialize<'a, T>(buffer :&mut T) -> Result<GameBoard, RpcError>
+        where T: Iterator<Item=&'a u8>
+    {
+        let mut board = [[' '; BOARD_WIDTH]; BOARD_WIDTH];
+        for row in 0..BOARD_WIDTH {
+            for col in 0..BOARD_WIDTH {
+                let &val = buffer.next().ok_or(RpcError::DeserializeError)?;
+                board[row][col] = if val == 1 {
+                    P1_TOKEN
+                } else if val == 2 {
+                    P2_TOKEN
+                } else if val == 0 {
+                    ' '
+                } else {
+                    return Err(RpcError::DeserializeError);
+                }
+            }
+        }
+        Ok(GameBoard {
+            board
+        })
     }
 }

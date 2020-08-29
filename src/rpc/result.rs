@@ -26,13 +26,16 @@ where
     U: Deserialize,
     E: Deserialize,
 {
-    fn deserialize(buffer: &mut &[u8]) -> Result<Self, RpcError> {
-        let err_byte = buffer.get(0).ok_or(RpcError::DeserializeError)?;
-        let mut rest = &buffer[1..];
+    fn deserialize<'a, T>(buffer: &mut T) -> Result<Self, RpcError>
+    where T: Iterator<Item=&'a u8>
+    {
+        println!("Getting error byte!");
+        let err_byte = buffer.next().ok_or(RpcError::DeserializeError)?;
         let deserialized_result = if *err_byte == 0 {
-            Ok(U::deserialize(&mut rest)?)
+            Ok(U::deserialize(buffer)?)
         } else {
-            Err(E::deserialize(&mut rest)?)
+            println!("Could not deserialize result!");
+            Err(E::deserialize(buffer)?)
         };
         Ok(deserialized_result)
     }
